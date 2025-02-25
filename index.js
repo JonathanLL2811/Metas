@@ -12,7 +12,7 @@ const pool = new Pool({
   }
 });
 
-app.get('/usuario', async (req, res) => {
+app.get('https://metas-production.up.railway.app/usuario', async (req, res) => {
   try {
     const result = await pool.query('SELECT * FROM usuario');
     res.json(result.rows);
