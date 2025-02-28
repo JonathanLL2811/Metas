@@ -1,41 +1,33 @@
-require('dotenv').config();
 const express = require('express');
-const { Pool } = require('pg');
+const multer = require('multer');
+const pool = require('./db'); // Conexión a la base de datos
+
 const app = express();
+app.use(express.json()); // Middleware para manejar JSON
 
-app.use(express.json());
+// Configuración de almacenamiento de Multer (en memoria)
+const storage = multer.memoryStorage();
+const upload = multer({ storage: storage });
 
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: {
-    rejectUnauthorized: false
-  }
-});
-
-app.get('https://metas-production.up.railway.app/usuario', async (req, res) => {
-  try {
-    const result = await pool.query('SELECT * FROM usuario');
-    res.json(result.rows);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-app.post('/usuario', async (req, res) => {
-  const { nombre, edad } = req.body;
+// Endpoint para agregar actividad con imagen
+app.post('/actividades', upload.single('foto'), async (req, res) => {
+  const { actividad, fecha, descripcion, limitantes, conclusiones } = req.body;
+  const foto = req.file ? req.file.buffer : null; // Aquí obtenemos el archivo subido
 
   try {
     const result = await pool.query(
-      'INSERT INTO usuario (nombre, edad) VALUES ($1, $2) RETURNING *',
-      [nombre, edad]
+      'INSERT INTO actividades (actividad, fecha, descripcion, limitantes, foto, conclusiones) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
+      [actividad, fecha, descripcion, limitantes, foto, conclusiones]
     );
-    res.status(201).json(result.rows[0]);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(201).json(result.rows[0]); // Retorna la actividad agregada
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Error al agregar la actividad');
   }
 });
 
-const PORT = process.env.PORT || 4000;
+// Puerto en el que se ejecutará el servidor
+const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
-  console.log(`Servidor corriendo en el puerto ${PORT}`);
+  console.log(`Servidor en ejecución en el puerto ${PORT}`);
 });
