@@ -30,8 +30,8 @@ app.get('/actividad', async (req, res) => {
       if (actividad.foto) {
         // Convertir la imagen a base64
         const fotoBase64 = actividad.foto.toString('base64');
-        // Obtener el tipo de imagen desde la base de datos (suponiendo que tienes un campo "foto_type" en la base de datos)
-        const fotoTipo = actividad.foto_type || 'image/jpeg'; // Cambia esto si tienes un campo específico para el tipo de imagen
+        // Obtener el tipo de imagen desde la base de datos
+        const fotoTipo = actividad.foto_type || 'image/jpeg';
         return {
           ...actividad,
           foto: fotoBase64,
