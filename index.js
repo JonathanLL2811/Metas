@@ -2,8 +2,8 @@ require('dotenv').config();
 const express = require('express');
 const { Pool } = require('pg');
 const multer = require('multer');
-const cors = require('cors');  // Importar CORS
-const upload = multer();  // Configuración de multer para manejar la carga de archivos
+const cors = require('cors');
+const upload = multer();
 const app = express();
 
 // Middleware para habilitar CORS
@@ -31,10 +31,29 @@ app.get('/actividad', async (req, res) => {
   }
 });
 
+// Endpoint para servir las imágenes
+app.get('/actividad/:id/foto', async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const result = await pool.query('SELECT foto FROM actividad WHERE id = $1', [id]);
+    if (result.rows.length > 0) {
+      const foto = result.rows[0].foto;
+      res.set('Content-Type', 'image/jpeg'); // Ajusta el tipo de contenido según el tipo de imagen
+      res.send(foto);
+    } else {
+      res.status(404).json({ error: 'Imagen no encontrada' });
+    }
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Endpoint para crear una nueva actividad
 app.post('/actividad', upload.single('foto'), async (req, res) => {
   const { actividad, fecha, descripcion, limitantes, conclusiones } = req.body;
-  const foto = req.file ? req.file.buffer : null;  // Si hay foto, tomamos el archivo
+  const foto = req.file ? req.file.buffer : null; // Si hay foto, tomamos el archivo
 
   try {
     const result = await pool.query(
