@@ -38,7 +38,7 @@ app.post('/actividad', upload.single('foto'), async (req, res) => {
 
   try {
     const result = await pool.query(
-      'INSERT INTO actividad (actividad, fecha, descripcion de la actividad, limitantes, conclusiones, foto) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
+      'INSERT INTO actividad (actividad, fecha, "descripcion de la actividad", limitantes, conclusiones, foto) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
       [actividad, fecha, descripcion, limitantes, conclusiones, foto]
     );
     res.status(201).json(result.rows[0]);
