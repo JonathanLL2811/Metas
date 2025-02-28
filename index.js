@@ -30,7 +30,7 @@ app.get('/actividades', async (req, res) => {
 });
 
 // **POST** Endpoint para agregar una nueva actividad
-app.post('/actividades', upload.single('foto'), async (req, res) => {
+app.post('/actividad', upload.single('foto'), async (req, res) => {
   const { fecha, descripcion, limitantes } = req.body;
   const foto = req.file ? req.file.buffer : null;  // Si se sube una foto, se guarda en el campo "foto"
   
