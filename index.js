@@ -24,7 +24,24 @@ const pool = new Pool({
 app.get('/actividad', async (req, res) => {
   try {
     const result = await pool.query('SELECT * FROM actividad');
-    res.json(result.rows);
+    
+    // Procesar las imágenes si las hay
+    const actividades = result.rows.map(actividad => {
+      if (actividad.foto) {
+        // Convertir la imagen a base64
+        const fotoBase64 = actividad.foto.toString('base64');
+        // Obtener el tipo de imagen desde la base de datos (suponiendo que tienes un campo "foto_type" en la base de datos)
+        const fotoTipo = actividad.foto_type || 'image/jpeg'; // Cambia esto si tienes un campo específico para el tipo de imagen
+        return {
+          ...actividad,
+          foto: fotoBase64,
+          fotoType: fotoTipo
+        };
+      }
+      return actividad;
+    });
+
+    res.json(actividades);
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: error.message });
@@ -35,11 +52,12 @@ app.get('/actividad', async (req, res) => {
 app.post('/actividad', upload.single('foto'), async (req, res) => {
   const { actividad, fecha, descripcion, limitantes, conclusiones } = req.body;
   const foto = req.file ? req.file.buffer : null;  // Si hay foto, tomamos el archivo
+  const fotoType = req.file ? req.file.mimetype : null; // Tipo de la imagen (jpeg, png, etc.)
 
   try {
     const result = await pool.query(
-      'INSERT INTO actividad (actividad, fecha, "descripcion de la actividad", limitantes, conclusiones, foto) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
-      [actividad, fecha, descripcion, limitantes, conclusiones, foto]
+      'INSERT INTO actividad (actividad, fecha, "descripcion de la actividad", limitantes, conclusiones, foto, foto_type) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *',
+      [actividad, fecha, descripcion, limitantes, conclusiones, foto, fotoType]
     );
     res.status(201).json(result.rows[0]);
   } catch (error) {
