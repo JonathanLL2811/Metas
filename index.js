@@ -33,7 +33,7 @@ app.get('/actividad', async (req, res) => {
 
 // Endpoint para crear una nueva actividad
 app.post('/actividad', upload.single('foto'), async (req, res) => {
-  const { actividad, fecha, descripcion de la actividad, limitantes, conclusiones } = req.body;
+  const { actividad, fecha, descripcion, limitantes, conclusiones } = req.body;
   const foto = req.file ? req.file.buffer : null;  // Si hay foto, tomamos el archivo
 
   try {
