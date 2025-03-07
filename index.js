@@ -1,74 +1,66 @@
-require('dotenv').config();
 const express = require('express');
-const { Pool } = require('pg');
-const multer = require('multer');
 const cors = require('cors');
-const upload = multer();
+const multer = require('multer');
+const { Pool } = require('pg');
+
 const app = express();
+const port = 3000;
 
-// Middleware para habilitar CORS
+// Configurar CORS
 app.use(cors());
-
-// Middleware para parsear el cuerpo de la petición (JSON)
 app.use(express.json());
 
-// Configuración de la conexión a la base de datos usando los datos del archivo .env
+// Configuración de Multer para manejar imágenes
+const storage = multer.memoryStorage();
+const upload = multer({ storage: storage });
+
+// Configuración de la base de datos en Railway
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: {
-    rejectUnauthorized: false
-  }
+  ssl: { rejectUnauthorized: false }
 });
 
-// Endpoint para obtener todas las actividades
-app.get('/actividad', async (req, res) => {
-  try {
-    const result = await pool.query('SELECT * FROM actividad');
-    res.json(result.rows);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: error.message });
-  }
-});
+const departamentos = ["laboratorio", "direccion", "personal", "planeamiento", "bienes", "redes", "vigilancia", "marcon"];
 
-// Endpoint para servir las imágenes
-app.get('/actividad/:id/foto', async (req, res) => {
-  const { id } = req.params;
-
-  try {
-    const result = await pool.query('SELECT foto FROM actividad WHERE id = $1', [id]);
-    if (result.rows.length > 0) {
-      const foto = result.rows[0].foto;
-      res.set('Content-Type', 'image/jpeg'); // Ajusta el tipo de contenido según el tipo de imagen
-      res.send(foto);
-    } else {
-      res.status(404).json({ error: 'Imagen no encontrada' });
+departamentos.forEach((departamento) => {
+  // Obtener todos los registros
+  app.get(`/${departamento}`, async (req, res) => {
+    try {
+      const result = await pool.query(`SELECT id, actividad, fecha, descripcion, limitantes, conclusiones, encode(foto, 'base64') AS foto FROM ${departamento}`);
+      res.json(result.rows);
+    } catch (err) {
+      res.status(500).json({ error: err.message });
     }
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: error.message });
-  }
+  });
+
+  // Insertar un nuevo registro
+  app.post(`/${departamento}`, upload.single('foto'), async (req, res) => {
+    try {
+      const { actividad, fecha, descripcion, limitantes, conclusiones } = req.body;
+      const foto = req.file ? req.file.buffer : null;
+      
+      const result = await pool.query(
+        `INSERT INTO ${departamento} (actividad, fecha, foto, descripcion, limitantes, conclusiones) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
+        [actividad, fecha, foto, descripcion, limitantes, conclusiones]
+      );
+      res.json(result.rows[0]);
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // Eliminar un registro por ID
+  app.delete(`/${departamento}/:id`, async (req, res) => {
+    try {
+      const { id } = req.params;
+      await pool.query(`DELETE FROM ${departamento} WHERE id = $1`, [id]);
+      res.json({ message: "Registro eliminado" });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
 });
 
-// Endpoint para crear una nueva actividad
-app.post('/actividad', upload.single('foto'), async (req, res) => {
-  const { actividad, fecha, descripcion, limitantes, conclusiones } = req.body;
-  const foto = req.file ? req.file.buffer : null; // Si hay foto, tomamos el archivo
-
-  try {
-    const result = await pool.query(
-      'INSERT INTO actividad (actividad, fecha, "descripcion de la actividad", limitantes, conclusiones, foto) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
-      [actividad, fecha, descripcion, limitantes, conclusiones, foto]
-    );
-    res.status(201).json(result.rows[0]);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// Configurar el puerto y arranque del servidor
-const PORT = process.env.PORT || 4000;
-app.listen(PORT, () => {
-  console.log(`Servidor corriendo en el puerto ${PORT}`);
+app.listen(port, () => {
+  console.log(`Servidor corriendo en http://localhost:${port}`);
 });
