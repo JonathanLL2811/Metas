@@ -21,7 +21,7 @@ const departamentos = [
   'laboratorio', 'direccion', 'personal', 'planeamiento',
   'bienes', 'redes', 'vigilancia', 'marcon'
 ];
-
+                                                                                                    
 // Generar endpoints para cada departamento
 departamentos.forEach((departamento) => {
 
@@ -71,35 +71,35 @@ departamentos.forEach((departamento) => {
     }
   });
 
-  // Actualizar una actividad existente
   app.put(`/${departamento}/:id`, upload.single('foto'), async (req, res) => {
     const { id } = req.params;
     const { actividad, fecha, descripcion, limitantes, conclusiones } = req.body;
     const foto = req.file ? req.file.buffer : null;
+
     try {
-      let query = `UPDATE ${departamento} SET actividad = $1, fecha = $2, descripcion = $3, limitantes = $4, conclusiones = $5`;
-      let params = [actividad, fecha, descripcion, limitantes, conclusiones];
+        let query = `UPDATE ${departamento} SET actividad = $1, fecha = $2, descripcion = $3, limitantes = $4, conclusiones = $5`;
+        let params = [actividad, fecha, descripcion, limitantes, conclusiones];
 
-      if (foto) {
-        query += `, foto = $6`;
-        params.push(foto);
-      }
+        if (foto) {
+            query += `, foto = $6`;
+            params.push(foto);
+        }
 
-      query += ` WHERE id = $${foto ? 7 : 6} RETURNING *`;
-      params.push(id);
+        query += ` WHERE id = $${params.length + 1} RETURNING *`;
+        params.push(id);
 
-      const result = await pool.query(query, params);
-      if (result.rows.length > 0) {
-        res.json(result.rows[0]);
-      } else {
-        res.status(404).json({ error: 'Actividad no encontrada' });
-      }
+        const result = await pool.query(query, params);
+
+        if (result.rows.length > 0) {
+            res.json(result.rows[0]);
+        } else {
+            res.status(404).json({ error: 'Actividad no encontrada' });
+        }
     } catch (error) {
-      console.error(error);
-      res.status(500).json({ error: error.message });
+        console.error(error);
+        res.status(500).json({ error: error.message });
     }
-  });
-
+});
   // Eliminar una actividad
   app.delete(`/${departamento}/:id`, async (req, res) => {
     const { id } = req.params;
