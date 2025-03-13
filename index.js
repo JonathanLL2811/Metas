@@ -24,7 +24,7 @@ const departamentos = [
 
 // Generar endpoints para cada departamento
 departamentos.forEach((departamento) => {
-  
+
   // Obtener todas las actividades
   app.get(`/${departamento}`, async (req, res) => {
     try {
@@ -60,11 +60,40 @@ departamentos.forEach((departamento) => {
     const foto = req.file ? req.file.buffer : null;
     try {
       const result = await pool.query(
-        `INSERT INTO ${departamento} (actividad, fecha, descripcion, limitantes, conclusiones, foto) 
+        `INSERT INTO ${departamento} (actividad, fecha, descripcion, limitantes, conclusiones, foto)
         VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
         [actividad, fecha, descripcion, limitantes, conclusiones, foto]
       );
       res.status(201).json(result.rows[0]);
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Actualizar una actividad existente
+  app.put(`/${departamento}/:id`, upload.single('foto'), async (req, res) => {
+    const { id } = req.params;
+    const { actividad, fecha, descripcion, limitantes, conclusiones } = req.body;
+    const foto = req.file ? req.file.buffer : null;
+    try {
+      let query = `UPDATE ${departamento} SET actividad = $1, fecha = $2, descripcion = $3, limitantes = $4, conclusiones = $5`;
+      let params = [actividad, fecha, descripcion, limitantes, conclusiones];
+
+      if (foto) {
+        query += `, foto = $6`;
+        params.push(foto);
+      }
+
+      query += ` WHERE id = $${foto ? 7 : 6} RETURNING *`;
+      params.push(id);
+
+      const result = await pool.query(query, params);
+      if (result.rows.length > 0) {
+        res.json(result.rows[0]);
+      } else {
+        res.status(404).json({ error: 'Actividad no encontrada' });
+      }
     } catch (error) {
       console.error(error);
       res.status(500).json({ error: error.message });
