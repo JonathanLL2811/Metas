@@ -16,10 +16,10 @@ const pool = new Pool({
     ssl: { rejectUnauthorized: false }
 });
 
-// Lista de departamentos
+// Lista de departamentos (CORREGIDO: se agregaron administracion y comunicacion)
 const departamentos = [
     'laboratorio', 'direccion', 'personal', 'planeamiento',
-    'bienes', 'redes', 'vigilancia', 'marcon'
+    'bienes', 'redes', 'vigilancia', 'marcon', 'administracion', 'comunicacion'
 ];
 
 // Generar endpoints para cada departamento
